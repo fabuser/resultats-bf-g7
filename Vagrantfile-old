@@ -1,0 +1,78 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+# Architecture haute disponibilité :
+#   VIP .10 (VRRP) → lb1 (.11, actif) / lb2 (.12, passif) → HAProxy
+#   → app1..appN (.21..2N, sans état) → bdd1 (.31, primaire) ⇄ bdd2 (.32, réplique)
+#   obs (.41) : Prometheus + Grafana
+#
+# Pour ajouter des serveurs applicatifs : changer app_count dans settings.yml
+# (ou APP_COUNT=4 en variable d'environnement), puis voir README.md.
+
+require "yaml"
+
+settings  = YAML.load_file(File.join(__dir__, "settings.yml"))
+NET       = settings.fetch("network")
+BOX       = settings.fetch("box")
+APP_COUNT = Integer(ENV.fetch("APP_COUNT", settings.fetch("app_count")))
+VIP       = "#{NET}.10"
+
+unless (2..9).cover?(APP_COUNT)
+  abort "app_count doit être compris entre 2 et 9 (adresses .21 à .29)."
+end
+
+# --- Inventaire (tableau 3.1) -------------------------------------------------
+nodes = []
+nodes << { name: "bdd1", ip: "#{NET}.31", mem: 1024, script: "db_primary.sh" }
+nodes << { name: "bdd2", ip: "#{NET}.32", mem: 1024, script: "db_replica.sh" }
+(1..APP_COUNT).each do |i|
+  nodes << { name: "app#{i}", ip: "#{NET}.#{20 + i}", mem: 512, script: "app.sh" }
+end
+nodes << { name: "lb1", ip: "#{NET}.11", mem: 512, script: "lb.sh",
+           env: { "LB_STATE" => "MASTER", "LB_PRIORITY" => "110", "LB_PEER" => "#{NET}.12" } }
+nodes << { name: "lb2", ip: "#{NET}.12", mem: 512, script: "lb.sh",
+           env: { "LB_STATE" => "BACKUP", "LB_PRIORITY" => "100", "LB_PEER" => "#{NET}.11" } }
+nodes << { name: "obs", ip: "#{NET}.41", mem: 1536, script: "obs.sh" }
+
+# Variables transmises à tous les scripts de provisionnement
+common_env = {
+  "NET"              => NET,
+  "VIP"              => VIP,
+  "APP_COUNT"        => APP_COUNT.to_s,
+  "DB_PRIMARY_IP"    => "#{NET}.31",
+  "DB_REPLICA_IP"    => "#{NET}.32",
+  "APP_PASSWORD"     => settings.fetch("app_password"),
+  "REPL_PASSWORD"    => settings.fetch("repl_password"),
+  "VRRP_PASSWORD"    => settings.fetch("vrrp_password"),
+  "GRAFANA_PASSWORD" => settings.fetch("grafana_password"),
+  "NODES"            => nodes.map { |n| "#{n[:name]}:#{n[:ip]}" }.join(" "),
+}
+
+Vagrant.configure("2") do |config|
+  config.vm.box = BOX
+  config.vm.box_check_update = false
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.linked_clone = true
+    vb.cpus = 1
+  end
+
+  nodes.each do |n|
+    config.vm.define n[:name] do |node|
+      node.vm.hostname = n[:name]
+      node.vm.network "private_network", ip: n[:ip]
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.name   = "ha-#{n[:name]}"
+        vb.memory = n[:mem]
+      end
+      node.vm.provider "libvirt" do |lv|
+        lv.memory = n[:mem]
+      end
+
+      env = common_env.merge("MY_IP" => n[:ip]).merge(n.fetch(:env, {}))
+      node.vm.provision "common", type: "shell", path: "provision/common.sh", env: env
+      node.vm.provision "role",   type: "shell", path: "provision/#{n[:script]}", env: env
+    end
+  end
+end

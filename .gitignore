@@ -1,0 +1,7 @@
+# Secrets : jamais versionnés (R7)
+.env
+# État local de Vagrant
+.vagrant/
+# Fichier engendré à chaque exécution du Vagrantfile (source de vérité = Vagrantfile + .env)
+config/noeuds.yml
+*.log
