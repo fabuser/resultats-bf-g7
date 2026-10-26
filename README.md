@@ -1,6 +1,6 @@
 # RÉSULTATS-BF — plateforme résiliente et scalable décrite en code
 
-Projet de groupe du module *DevOps et infrastructures reproductibles* (M1 Informatique, IBAM / UJKZ — Dr SOMDA).
+Projet de groupe 7 du module *DevOps et infrastructures reproductibles* (M1 Informatique, IBAM / UJKZ — Dr SOMDA).
 Une infrastructure de consultation de résultats d'examens, **entièrement reconstructible** avec `vagrant up`,
 qui survit à la panne d'un serveur applicatif, d'une base ou d'un répartiteur, et qui passe à l'échelle
 en changeant **une seule valeur** (`NB_APP`).
