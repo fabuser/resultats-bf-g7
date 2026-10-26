@@ -58,7 +58,7 @@ systemctl daemon-reload
 # Si bdd2 a pris le relais, bdd1 devient sa réplique au lieu de redémarrer en primaire.
 bdd2_est_primaire() {
   [[ "$(sudo -u postgres env PGPASSFILE="$PGPASSFILE" psql \
-        "host=$BDD2 dbname=$DB_NAME user=$DB_USER connect_timeout=3" \
+        "host=$BDD2 dbname=$DB_NAME user=$DB_USER connect_timeout=5" \
         -tAc 'SELECT pg_is_in_recovery()' 2>/dev/null)" == "f" ]]
 }
 if [[ ! -f "$DATA/standby.signal" ]] && bdd2_est_primaire; then
