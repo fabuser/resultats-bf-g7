@@ -27,7 +27,7 @@ if !File.exist?(File.join(__dir__, '.env')) && %w[up provision reload].include?(
 end
 
 GROUPE     = param('GROUPE', 7).to_i                  # 1..8
-NB_APP     = param('NB_APP', 2).to_i                  # nombre de serveurs applicatifs
+NB_APP     = param('NB_APP', 4).to_i                  # nombre de serveurs applicatifs
 EXTENSIONS = param('EXTENSIONS', '').split(',').map(&:strip).reject(&:empty?)
 abort "GROUPE doit être compris entre 1 et 8"      unless (1..8).cover?(GROUPE)
 abort "NB_APP doit être compris entre 2 et 9"      unless (2..9).cover?(NB_APP)

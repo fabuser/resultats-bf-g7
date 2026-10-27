@@ -5,7 +5,7 @@ TOTAL=20
 echo "Commande : for i in 1..$TOTAL; do curl $LB_URL/info; done"
 : > /tmp/v1_hotes.txt
 for _ in $(seq "$TOTAL"); do
-  curl -s -m 3 "$LB_URL/info" | sed -n 's/.*"hote": *"\([^"]*\)".*/\1/p' >> /tmp/v1_hotes.txt
+  curl -s -m 3 "$LB_URL/info" | grep -o 'app[0-9]*' >> /tmp/v1_hotes.txt
 done
 APPS=$(awk '/^- nom:/{nom=$3} /^  role:/{if($2=="app")print nom}' "$NOEUDS" | tr '\n' ' ')
 echo "Résultat brut (serveur : nombre de réponses) :"

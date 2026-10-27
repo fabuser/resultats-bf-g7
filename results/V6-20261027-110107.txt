@@ -1,0 +1,9 @@
+=== Scénario V6 — 2026-10-27 11:01:07 ===
+Groupe=7  N(serveurs applicatifs)=4  commit=cdecda7
+Hôte : MINGW64_NT-10.0-26300 3.6.5-22c95533.x86_64 | CPU logiques : 12 | VirtualBox : ?
+
+Adresse testée : http://192.168.62.5 (IP virtuelle) ; panne de lb1 à t=8s ; charge ~20 req/s pendant 30s
+==> lb1: Attempting graceful shutdown of VM...
+Requêtes : 131 | échecs : 131
+Temps de reprise (première à dernière erreur) : 29.23 s | première erreur à t_panne-8.03 s
+Restauration : vagrant up lb1
